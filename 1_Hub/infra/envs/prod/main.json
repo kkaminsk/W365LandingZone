@@ -1,0 +1,1089 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.37.4.10188",
+      "templateHash": "9821130080215487368"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "southcentralus",
+      "metadata": {
+        "description": "Primary Azure region for deployment"
+      }
+    },
+    "env": {
+      "type": "string",
+      "defaultValue": "prod",
+      "metadata": {
+        "description": "Environment name (prod, dev, test)"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "env": "[parameters('env')]",
+        "owner": "platform-team",
+        "costCenter": "1000",
+        "dataSensitivity": "internal"
+      },
+      "metadata": {
+        "description": "Common tags applied to all resources"
+      }
+    },
+    "allowedLocations": {
+      "type": "array",
+      "defaultValue": [
+        "southcentralus",
+        "canadaeast"
+      ],
+      "metadata": {
+        "description": "List of allowed Azure regions for policy enforcement"
+      }
+    },
+    "networkAdminsGroupObjectId": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object ID of the network administrators AAD group"
+      }
+    },
+    "opsGroupObjectId": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object ID of the operations team AAD group"
+      }
+    },
+    "enableFirewall": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable Azure Firewall deployment (requires Network Contributor permissions)"
+      }
+    }
+  },
+  "variables": {
+    "rgNetName": "rg-hub-net",
+    "rgOpsName": "rg-hub-ops"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "rg",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "rgNetName": {
+            "value": "[variables('rgNetName')]"
+          },
+          "rgOpsName": {
+            "value": "[variables('rgOpsName')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "8051712181528113717"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the resource groups"
+              }
+            },
+            "rgNetName": {
+              "type": "string",
+              "defaultValue": "rg-hub-net",
+              "metadata": {
+                "description": "Name of the network resource group"
+              }
+            },
+            "rgOpsName": {
+              "type": "string",
+              "defaultValue": "rg-hub-ops",
+              "metadata": {
+                "description": "Name of the operations resource group"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags to apply to all resource groups"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Resources/resourceGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('rgNetName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "type": "Microsoft.Resources/resourceGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('rgOpsName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            }
+          ],
+          "outputs": {
+            "rgNetId": {
+              "type": "string",
+              "value": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('rgNetName'))]"
+            },
+            "rgOpsId": {
+              "type": "string",
+              "value": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('rgOpsName'))]"
+            },
+            "rgNetName": {
+              "type": "string",
+              "value": "[parameters('rgNetName')]"
+            },
+            "rgOpsName": {
+              "type": "string",
+              "value": "[parameters('rgOpsName')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "logAnalytics",
+      "resourceGroup": "[variables('rgOpsName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "name": {
+            "value": "log-ops-hub"
+          },
+          "retentionDays": {
+            "value": 30
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "2467528299388505791"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for the Log Analytics workspace"
+              }
+            },
+            "name": {
+              "type": "string",
+              "defaultValue": "log-ops-hub",
+              "metadata": {
+                "description": "Name of the Log Analytics workspace"
+              }
+            },
+            "retentionDays": {
+              "type": "int",
+              "defaultValue": 30,
+              "metadata": {
+                "description": "Number of days to retain logs (30-730)"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags to apply to the workspace"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2022-10-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "retentionInDays": "[parameters('retentionDays')]",
+                "features": {
+                  "enableLogAccessUsingOnlyResourcePermissions": true
+                },
+                "sku": {
+                  "name": "PerGB2018"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "lawId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('name'))]"
+            },
+            "lawName": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/deployments', 'rg')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "hubNetwork",
+      "resourceGroup": "[variables('rgNetName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "vnetName": {
+            "value": "vnet-hub"
+          },
+          "vnetAddressSpace": {
+            "value": "10.10.0.0/20"
+          },
+          "mgmtSubnetPrefix": {
+            "value": "10.10.0.0/24"
+          },
+          "privEndpointsSubnetPrefix": {
+            "value": "10.10.1.0/24"
+          },
+          "enableGatewaySubnet": {
+            "value": false
+          },
+          "enableFirewall": {
+            "value": "[parameters('enableFirewall')]"
+          },
+          "firewallSubnetPrefix": {
+            "value": "10.10.2.0/26"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "13251508287587192153"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for all resources"
+              }
+            },
+            "vnetName": {
+              "type": "string",
+              "defaultValue": "vnet-hub",
+              "metadata": {
+                "description": "Name of the hub virtual network"
+              }
+            },
+            "vnetAddressSpace": {
+              "type": "string",
+              "defaultValue": "10.10.0.0/20",
+              "metadata": {
+                "description": "Address space for the virtual network in CIDR notation"
+              }
+            },
+            "mgmtSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.10.0.0/24",
+              "metadata": {
+                "description": "Address prefix for the management subnet"
+              }
+            },
+            "privEndpointsSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.10.1.0/24",
+              "metadata": {
+                "description": "Address prefix for the private endpoints subnet"
+              }
+            },
+            "enableGatewaySubnet": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable Gateway subnet for VPN/ExpressRoute"
+              }
+            },
+            "gatewaySubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.10.3.0/27",
+              "metadata": {
+                "description": "Address prefix for the Gateway subnet"
+              }
+            },
+            "enableFirewall": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable Azure Firewall deployment"
+              }
+            },
+            "firewallSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "10.10.2.0/26",
+              "metadata": {
+                "description": "Address prefix for the Azure Firewall subnet"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags to apply to all resources"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}-mgmt-nsg', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}-priv-nsg', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressSpace')]"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('vnetName'), 'mgmt-snet')]",
+              "properties": {
+                "addressPrefix": "[parameters('mgmtSubnetPrefix')]",
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-mgmt-nsg', parameters('vnetName')))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-mgmt-nsg', parameters('vnetName')))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('vnetName'), 'priv-endpoints-snet')]",
+              "properties": {
+                "addressPrefix": "[parameters('privEndpointsSubnetPrefix')]",
+                "privateEndpointNetworkPolicies": "Disabled",
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-priv-nsg', parameters('vnetName')))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-priv-nsg', parameters('vnetName')))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'mgmt-snet')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            },
+            {
+              "condition": "[parameters('enableFirewall')]",
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('vnetName'), 'AzureFirewallSubnet')]",
+              "properties": {
+                "addressPrefix": "[parameters('firewallSubnetPrefix')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'priv-endpoints-snet')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            },
+            {
+              "condition": "[parameters('enableGatewaySubnet')]",
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('vnetName'), 'GatewaySubnet')]",
+              "properties": {
+                "addressPrefix": "[parameters('gatewaySubnetPrefix')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'AzureFirewallSubnet')]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'priv-endpoints-snet')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            },
+            {
+              "condition": "[parameters('enableFirewall')]",
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}-afw-pip', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              },
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "condition": "[parameters('enableFirewall')]",
+              "type": "Microsoft.Network/azureFirewalls",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}-afw', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "name": "AZFW_VNet",
+                  "tier": "Basic"
+                },
+                "threatIntelMode": "Alert",
+                "ipConfigurations": [
+                  {
+                    "name": "azureFirewallIpConfig",
+                    "properties": {
+                      "subnet": {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'AzureFirewallSubnet')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-afw-pip', parameters('vnetName')))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "tags": "[parameters('tags')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-afw-pip', parameters('vnetName')))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'AzureFirewallSubnet')]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            },
+            "vnetNameOut": {
+              "type": "string",
+              "value": "[parameters('vnetName')]"
+            },
+            "mgmtSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'mgmt-snet')]"
+            },
+            "privEndpointsSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), 'priv-endpoints-snet')]"
+            },
+            "firewallName": {
+              "type": "string",
+              "value": "[if(parameters('enableFirewall'), format('{0}-afw', parameters('vnetName')), '')]"
+            },
+            "firewallPublicIpId": {
+              "type": "string",
+              "value": "[if(parameters('enableFirewall'), resourceId('Microsoft.Network/publicIPAddresses', format('{0}-afw-pip', parameters('vnetName'))), '')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/deployments', 'rg')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "privateDns",
+      "resourceGroup": "[variables('rgNetName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "vnetId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNetName')), 'Microsoft.Resources/deployments', 'hubNetwork'), '2022-09-01').outputs.vnetId.value]"
+          },
+          "zones": {
+            "value": [
+              "privatelink.azurewebsites.net",
+              "[format('privatelink.blob.{0}', environment().suffixes.storage)]"
+            ]
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "12035449749079460055"
+            }
+          },
+          "parameters": {
+            "zones": {
+              "type": "array",
+              "defaultValue": [
+                "privatelink.azurewebsites.net",
+                "[format('privatelink.blob.{0}', environment().suffixes.storage)]"
+              ],
+              "metadata": {
+                "description": "Array of private DNS zone names to create"
+              }
+            },
+            "vnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the virtual network to link to the DNS zones"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags to apply to the DNS zones"
+              }
+            }
+          },
+          "resources": [
+            {
+              "copy": {
+                "name": "pdz",
+                "count": "[length(parameters('zones'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2024-06-01",
+              "name": "[parameters('zones')[copyIndex()]]",
+              "location": "global",
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "copy": {
+                "name": "vnetLinks",
+                "count": "[length(parameters('zones'))]"
+              },
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2024-06-01",
+              "name": "[format('{0}/{1}', parameters('zones')[copyIndex()], 'hub-vnet-link')]",
+              "location": "global",
+              "properties": {
+                "virtualNetwork": {
+                  "id": "[parameters('vnetId')]"
+                },
+                "registrationEnabled": false
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', parameters('zones')[copyIndex()])]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNetName')), 'Microsoft.Resources/deployments', 'hubNetwork')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "subscriptionDiagnostics",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "lawId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgOpsName')), 'Microsoft.Resources/deployments', 'logAnalytics'), '2022-09-01').outputs.lawId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "8737764730369826549"
+            }
+          },
+          "parameters": {
+            "lawId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the Log Analytics workspace"
+              }
+            },
+            "name": {
+              "type": "string",
+              "defaultValue": "activity-to-law",
+              "metadata": {
+                "description": "Name of the diagnostic setting"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "[parameters('name')]",
+              "properties": {
+                "workspaceId": "[parameters('lawId')]",
+                "logs": [
+                  {
+                    "category": "Administrative",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Security",
+                    "enabled": true
+                  },
+                  {
+                    "category": "ServiceHealth",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Alert",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Recommendation",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Policy",
+                    "enabled": true
+                  },
+                  {
+                    "category": "Autoscale",
+                    "enabled": true
+                  },
+                  {
+                    "category": "ResourceHealth",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgOpsName')), 'Microsoft.Resources/deployments', 'logAnalytics')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "policy",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "allowedLocations": {
+            "value": "[parameters('allowedLocations')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "2658434062166669628"
+            }
+          },
+          "parameters": {
+            "allowedLocations": {
+              "type": "array",
+              "defaultValue": [
+                "southcentralus",
+                "canadaeast"
+              ],
+              "metadata": {
+                "description": "List of allowed Azure regions for resource deployment"
+              }
+            },
+            "enableLocationPolicy": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable allowed locations policy"
+              }
+            }
+          },
+          "resources": [
+            {
+              "condition": "[parameters('enableLocationPolicy')]",
+              "type": "Microsoft.Authorization/policyAssignments",
+              "apiVersion": "2024-04-01",
+              "name": "allowed-locations",
+              "properties": {
+                "displayName": "Allowed locations",
+                "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c",
+                "parameters": {
+                  "listOfAllowedLocations": {
+                    "value": "[parameters('allowedLocations')]"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "rbacNet",
+      "resourceGroup": "[variables('rgNetName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "ownerGroupObjectId": {
+            "value": "[parameters('networkAdminsGroupObjectId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "5742800059840723691"
+            }
+          },
+          "parameters": {
+            "ownerGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional: Group objectId to assign Owner role in this resource group"
+              }
+            },
+            "contributorGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional: Group objectId to assign Contributor role in this resource group"
+              }
+            },
+            "readerGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional: Group objectId to assign Reader role in this resource group"
+              }
+            }
+          },
+          "resources": [
+            {
+              "condition": "[not(empty(parameters('ownerGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('ownerGroupObjectId'), 'owner')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
+                "principalId": "[parameters('ownerGroupObjectId')]",
+                "principalType": "Group"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('contributorGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('contributorGroupObjectId'), 'contributor')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+                "principalId": "[parameters('contributorGroupObjectId')]",
+                "principalType": "Group"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('readerGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('readerGroupObjectId'), 'reader')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
+                "principalId": "[parameters('readerGroupObjectId')]",
+                "principalType": "Group"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/deployments', 'rg')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "rbacOps",
+      "resourceGroup": "[variables('rgOpsName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "contributorGroupObjectId": {
+            "value": "[parameters('opsGroupObjectId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "5742800059840723691"
+            }
+          },
+          "parameters": {
+            "ownerGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional: Group objectId to assign Owner role in this resource group"
+              }
+            },
+            "contributorGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional: Group objectId to assign Contributor role in this resource group"
+              }
+            },
+            "readerGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Optional: Group objectId to assign Reader role in this resource group"
+              }
+            }
+          },
+          "resources": [
+            {
+              "condition": "[not(empty(parameters('ownerGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('ownerGroupObjectId'), 'owner')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
+                "principalId": "[parameters('ownerGroupObjectId')]",
+                "principalType": "Group"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('contributorGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('contributorGroupObjectId'), 'contributor')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+                "principalId": "[parameters('contributorGroupObjectId')]",
+                "principalType": "Group"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('readerGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('readerGroupObjectId'), 'reader')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
+                "principalId": "[parameters('readerGroupObjectId')]",
+                "principalType": "Group"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/deployments', 'rg')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "budget",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "subscriptionBudgetAmount": {
+            "value": 200
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "4756233259240597474"
+            }
+          },
+          "parameters": {
+            "subscriptionBudgetAmount": {
+              "type": "int",
+              "defaultValue": 200,
+              "metadata": {
+                "description": "Monthly budget amount in USD"
+              }
+            },
+            "budgetStartDate": {
+              "type": "string",
+              "defaultValue": "2025-01-01T00:00:00Z",
+              "metadata": {
+                "description": "Start date for the budget in ISO 8601 format"
+              }
+            },
+            "budgetContactEmails": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Contact email addresses for budget alerts (optional - budget will be disabled if empty)"
+              }
+            },
+            "enableBudget": {
+              "type": "bool",
+              "defaultValue": "[not(empty(parameters('budgetContactEmails')))]",
+              "metadata": {
+                "description": "Enable budget monitoring"
+              }
+            }
+          },
+          "resources": [
+            {
+              "condition": "[parameters('enableBudget')]",
+              "type": "Microsoft.Consumption/budgets",
+              "apiVersion": "2021-10-01",
+              "name": "subscription-monthly",
+              "properties": {
+                "category": "Cost",
+                "amount": "[parameters('subscriptionBudgetAmount')]",
+                "timeGrain": "Monthly",
+                "timePeriod": {
+                  "startDate": "[parameters('budgetStartDate')]"
+                },
+                "notifications": {
+                  "Actual_GreaterThan_80_Percent": {
+                    "enabled": true,
+                    "operator": "GreaterThan",
+                    "threshold": 80,
+                    "contactEmails": "[parameters('budgetContactEmails')]",
+                    "thresholdType": "Actual"
+                  },
+                  "Actual_GreaterThan_100_Percent": {
+                    "enabled": true,
+                    "operator": "GreaterThan",
+                    "threshold": 100,
+                    "contactEmails": "[parameters('budgetContactEmails')]",
+                    "thresholdType": "Actual"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "vnetId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgNetName')), 'Microsoft.Resources/deployments', 'hubNetwork'), '2022-09-01').outputs.vnetId.value]"
+    },
+    "lawId": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgOpsName')), 'Microsoft.Resources/deployments', 'logAnalytics'), '2022-09-01').outputs.lawId.value]"
+    }
+  }
+}

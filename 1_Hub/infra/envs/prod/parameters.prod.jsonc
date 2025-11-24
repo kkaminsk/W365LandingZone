@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "southcentralus" },
+    "env": { "value": "prod" },
+    "tags": {
+      "value": {
+        "env": "prod",
+        "owner": "platform-team",
+        "costCenter": "1000",
+        "dataSensitivity": "internal"
+      }
+    },
+    "allowedLocations": { "value": ["southcentralus", "canadaeast"] },
+    "networkAdminsGroupObjectId": { "value": "" },
+    "opsGroupObjectId": { "value": "" },
+    "enableFirewall": { "value": false }
+  }
+}

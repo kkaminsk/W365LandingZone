@@ -1,0 +1,714 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.37.4.10188",
+      "templateHash": "12688819117076708111"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "southcentralus",
+      "metadata": {
+        "description": "Primary Azure region for deployment"
+      }
+    },
+    "env": {
+      "type": "string",
+      "defaultValue": "prod",
+      "metadata": {
+        "description": "Environment name (prod, dev, test)"
+      }
+    },
+    "studentNumber": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 40,
+      "metadata": {
+        "description": "Student number (1-40) for unique IP addressing"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "env": "[parameters('env')]",
+        "workload": "Windows365",
+        "owner": "platform-team",
+        "costCenter": "1000"
+      },
+      "metadata": {
+        "description": "Common tags applied to all resources"
+      }
+    },
+    "enableAvdSubnet": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable Azure Virtual Desktop subnet"
+      }
+    },
+    "hubVnetId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Hub VNet resource ID for peering (optional)"
+      }
+    },
+    "allowForwardedTraffic": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Allow forwarded traffic from hub"
+      }
+    },
+    "useRemoteGateways": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Use remote gateways in hub VNet"
+      }
+    },
+    "windows365ServicePrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "Windows 365 Service Principal Object ID (required for permissions)"
+      }
+    }
+  },
+  "variables": {
+    "thirdOctet": "[parameters('studentNumber')]",
+    "vnetAddressSpace": "[format('192.168.{0}.0/24', variables('thirdOctet'))]",
+    "cloudPCSubnetPrefix": "[format('192.168.{0}.0/26', variables('thirdOctet'))]",
+    "mgmtSubnetPrefix": "[format('192.168.{0}.64/26', variables('thirdOctet'))]",
+    "avdSubnetPrefix": "[format('192.168.{0}.128/26', variables('thirdOctet'))]",
+    "rgName": "[format('rg-w365-spoke-student{0}-{1}', parameters('studentNumber'), parameters('env'))]",
+    "vnetName": "[format('vnet-w365-spoke-student{0}-{1}', parameters('studentNumber'), parameters('env'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('rg-w365-spoke-student{0}', parameters('studentNumber'))]",
+      "location": "[deployment().location]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "rgName": {
+            "value": "[variables('rgName')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "5014610676974066466"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for resource group"
+              }
+            },
+            "rgName": {
+              "type": "string",
+              "defaultValue": "rg-w365-spoke",
+              "metadata": {
+                "description": "Name of the resource group for Windows 365 spoke network"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags to apply"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Resources/resourceGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('rgName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            }
+          ],
+          "outputs": {
+            "resourceGroupId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource Group ID"
+              },
+              "value": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('rgName'))]"
+            },
+            "resourceGroupName": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource Group name"
+              },
+              "value": "[parameters('rgName')]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('spoke-network-w365-student{0}', parameters('studentNumber'))]",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "vnetName": {
+            "value": "[variables('vnetName')]"
+          },
+          "vnetAddressSpace": {
+            "value": "[variables('vnetAddressSpace')]"
+          },
+          "cloudPCSubnetPrefix": {
+            "value": "[variables('cloudPCSubnetPrefix')]"
+          },
+          "mgmtSubnetPrefix": {
+            "value": "[variables('mgmtSubnetPrefix')]"
+          },
+          "avdSubnetPrefix": {
+            "value": "[variables('avdSubnetPrefix')]"
+          },
+          "enableAvdSubnet": {
+            "value": "[parameters('enableAvdSubnet')]"
+          },
+          "hubVnetId": {
+            "value": "[parameters('hubVnetId')]"
+          },
+          "allowForwardedTraffic": {
+            "value": "[parameters('allowForwardedTraffic')]"
+          },
+          "useRemoteGateways": {
+            "value": "[parameters('useRemoteGateways')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "14655255454161941090"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "Azure region for all resources"
+              }
+            },
+            "vnetName": {
+              "type": "string",
+              "defaultValue": "vnet-w365-spoke",
+              "metadata": {
+                "description": "Name of the spoke virtual network"
+              }
+            },
+            "vnetAddressSpace": {
+              "type": "string",
+              "defaultValue": "192.168.100.0/24",
+              "metadata": {
+                "description": "Address space for the virtual network in CIDR notation (Class C: 192.168.x.0/24)"
+              }
+            },
+            "cloudPCSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "192.168.100.0/26",
+              "metadata": {
+                "description": "Address prefix for the Windows 365 Cloud PC subnet"
+              }
+            },
+            "mgmtSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "192.168.100.64/26",
+              "metadata": {
+                "description": "Address prefix for the management subnet"
+              }
+            },
+            "avdSubnetPrefix": {
+              "type": "string",
+              "defaultValue": "192.168.100.128/26",
+              "metadata": {
+                "description": "Address prefix for the Azure Virtual Desktop subnet (if needed)"
+              }
+            },
+            "enableAvdSubnet": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Enable Azure Virtual Desktop subnet"
+              }
+            },
+            "hubVnetId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Hub VNet ID for peering (optional - leave empty to skip peering)"
+              }
+            },
+            "allowForwardedTraffic": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Allow forwarded traffic from hub"
+              }
+            },
+            "useRemoteGateways": {
+              "type": "bool",
+              "defaultValue": false,
+              "metadata": {
+                "description": "Use remote gateways in hub"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Resource tags to apply to all resources"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}-cloudpc-nsg', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "Allow-RDP-Inbound",
+                    "properties": {
+                      "description": "Allow RDP from authorized networks",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "3389",
+                      "sourceAddressPrefix": "VirtualNetwork",
+                      "destinationAddressPrefix": "*",
+                      "access": "Allow",
+                      "priority": 100,
+                      "direction": "Inbound"
+                    }
+                  },
+                  {
+                    "name": "Allow-HTTPS-Outbound",
+                    "properties": {
+                      "description": "Allow HTTPS outbound for Windows 365 service",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "443",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "Internet",
+                      "access": "Allow",
+                      "priority": 100,
+                      "direction": "Outbound"
+                    }
+                  },
+                  {
+                    "name": "Allow-DNS-Outbound",
+                    "properties": {
+                      "description": "Allow DNS outbound",
+                      "protocol": "*",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "53",
+                      "sourceAddressPrefix": "*",
+                      "destinationAddressPrefix": "*",
+                      "access": "Allow",
+                      "priority": 110,
+                      "direction": "Outbound"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}-mgmt-nsg', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "Allow-HTTPS-Inbound",
+                    "properties": {
+                      "description": "Allow HTTPS for management",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "443",
+                      "sourceAddressPrefix": "VirtualNetwork",
+                      "destinationAddressPrefix": "*",
+                      "access": "Allow",
+                      "priority": 100,
+                      "direction": "Inbound"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[parameters('enableAvdSubnet')]",
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}-avd-nsg', parameters('vnetName'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "Allow-RDP-Inbound",
+                    "properties": {
+                      "description": "Allow RDP from authorized networks",
+                      "protocol": "Tcp",
+                      "sourcePortRange": "*",
+                      "destinationPortRange": "3389",
+                      "sourceAddressPrefix": "VirtualNetwork",
+                      "destinationAddressPrefix": "*",
+                      "access": "Allow",
+                      "priority": 100,
+                      "direction": "Inbound"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressSpace')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "snet-cloudpc",
+                    "properties": {
+                      "addressPrefix": "[parameters('cloudPCSubnetPrefix')]",
+                      "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-cloudpc-nsg', parameters('vnetName')))]"
+                      },
+                      "serviceEndpoints": [
+                        {
+                          "service": "Microsoft.Storage"
+                        },
+                        {
+                          "service": "Microsoft.KeyVault"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "snet-mgmt",
+                    "properties": {
+                      "addressPrefix": "[parameters('mgmtSubnetPrefix')]",
+                      "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-mgmt-nsg', parameters('vnetName')))]"
+                      }
+                    }
+                  },
+                  {
+                    "name": "snet-avd",
+                    "properties": {
+                      "addressPrefix": "[parameters('avdSubnetPrefix')]",
+                      "networkSecurityGroup": "[if(parameters('enableAvdSubnet'), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-avd-nsg', parameters('vnetName')))), null())]"
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-avd-nsg', parameters('vnetName')))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-cloudpc-nsg', parameters('vnetName')))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-mgmt-nsg', parameters('vnetName')))]"
+              ]
+            },
+            {
+              "condition": "[not(empty(parameters('hubVnetId')))]",
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2024-03-01",
+              "name": "[format('{0}/{1}', parameters('vnetName'), 'peer-to-hub')]",
+              "properties": {
+                "remoteVirtualNetwork": {
+                  "id": "[parameters('hubVnetId')]"
+                },
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": "[parameters('allowForwardedTraffic')]",
+                "allowGatewayTransit": false,
+                "useRemoteGateways": "[parameters('useRemoteGateways')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "vnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "Virtual Network resource ID"
+              },
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            },
+            "vnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "Virtual Network name"
+              },
+              "value": "[parameters('vnetName')]"
+            },
+            "cloudPCSubnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "Cloud PC subnet resource ID"
+              },
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2024-03-01').subnets[0].id]"
+            },
+            "mgmtSubnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "Management subnet resource ID"
+              },
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2024-03-01').subnets[1].id]"
+            },
+            "avdSubnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "AVD subnet resource ID (if enabled)"
+              },
+              "value": "[if(parameters('enableAvdSubnet'), reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2024-03-01').subnets[2].id, '')]"
+            },
+            "cloudPCNsgId": {
+              "type": "string",
+              "metadata": {
+                "description": "Cloud PC NSG resource ID"
+              },
+              "value": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-cloudpc-nsg', parameters('vnetName')))]"
+            },
+            "mgmtNsgId": {
+              "type": "string",
+              "metadata": {
+                "description": "Management NSG resource ID"
+              },
+              "value": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-mgmt-nsg', parameters('vnetName')))]"
+            },
+            "peeringStatus": {
+              "type": "string",
+              "metadata": {
+                "description": "VNet peering status"
+              },
+              "value": "[if(not(empty(parameters('hubVnetId'))), 'Configured', 'Not Configured')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/deployments', format('rg-w365-spoke-student{0}', parameters('studentNumber')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('w365-permissions-student{0}', parameters('studentNumber'))]",
+      "resourceGroup": "[variables('rgName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "resourceGroupName": {
+            "value": "[variables('rgName')]"
+          },
+          "vnetName": {
+            "value": "[variables('vnetName')]"
+          },
+          "windows365ServicePrincipalId": {
+            "value": "[parameters('windows365ServicePrincipalId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.37.4.10188",
+              "templateHash": "5142399572496368179"
+            }
+          },
+          "parameters": {
+            "resourceGroupName": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource Group name where the role assignments will be created"
+              }
+            },
+            "vnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "Virtual Network name for Windows 365 Network User role"
+              }
+            },
+            "windows365ServicePrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Windows 365 Service Principal Object ID - must be retrieved at deployment time"
+              }
+            }
+          },
+          "variables": {
+            "windows365NetworkInterfaceContributorRoleId": "1f135831-5bbe-4924-9016-264044c00788",
+            "windows365NetworkUserRoleId": "7eabc9a4-85f7-4f71-b8ab-75daaccc1033"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(parameters('resourceGroupName'), parameters('windows365ServicePrincipalId'), variables('windows365NetworkInterfaceContributorRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('windows365NetworkInterfaceContributorRoleId'))]",
+                "principalId": "[parameters('windows365ServicePrincipalId')]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.Network/virtualNetworks/{0}', parameters('vnetName'))]",
+              "name": "[guid(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), parameters('windows365ServicePrincipalId'), variables('windows365NetworkUserRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('windows365NetworkUserRoleId'))]",
+                "principalId": "[parameters('windows365ServicePrincipalId')]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ],
+          "outputs": {
+            "rgRoleAssignmentId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource Group role assignment ID"
+              },
+              "value": "[resourceId('Microsoft.Authorization/roleAssignments', guid(parameters('resourceGroupName'), parameters('windows365ServicePrincipalId'), variables('windows365NetworkInterfaceContributorRoleId')))]"
+            },
+            "vnetRoleAssignmentId": {
+              "type": "string",
+              "metadata": {
+                "description": "VNet role assignment ID"
+              },
+              "value": "[extensionResourceId(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), parameters('windows365ServicePrincipalId'), variables('windows365NetworkUserRoleId')))]"
+            },
+            "status": {
+              "type": "string",
+              "metadata": {
+                "description": "Status message"
+              },
+              "value": "Windows 365 permissions configured successfully"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('spoke-network-w365-student{0}', parameters('studentNumber')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource Group name"
+      },
+      "value": "[reference(subscriptionResourceId('Microsoft.Resources/deployments', format('rg-w365-spoke-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.resourceGroupName.value]"
+    },
+    "vnetId": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network ID"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('spoke-network-w365-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.vnetId.value]"
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network name"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('spoke-network-w365-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.vnetName.value]"
+    },
+    "cloudPCSubnetId": {
+      "type": "string",
+      "metadata": {
+        "description": "Cloud PC subnet ID"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('spoke-network-w365-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.cloudPCSubnetId.value]"
+    },
+    "mgmtSubnetId": {
+      "type": "string",
+      "metadata": {
+        "description": "Management subnet ID"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('spoke-network-w365-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.mgmtSubnetId.value]"
+    },
+    "avdSubnetId": {
+      "type": "string",
+      "metadata": {
+        "description": "AVD subnet ID"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('spoke-network-w365-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.avdSubnetId.value]"
+    },
+    "peeringStatus": {
+      "type": "string",
+      "metadata": {
+        "description": "Peering status to hub"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('spoke-network-w365-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.peeringStatus.value]"
+    },
+    "w365PermissionsStatus": {
+      "type": "string",
+      "metadata": {
+        "description": "Windows 365 permissions status"
+      },
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('rgName')), 'Microsoft.Resources/deployments', format('w365-permissions-student{0}', parameters('studentNumber'))), '2022-09-01').outputs.status.value]"
+    }
+  }
+}

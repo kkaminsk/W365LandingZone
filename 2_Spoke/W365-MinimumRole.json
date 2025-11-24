@@ -1,0 +1,24 @@
+{
+  "Name": "Windows 365 Spoke Network Deployer",
+  "Id": null,
+  "IsCustom": true,
+  "Description": "Minimum permissions required to deploy Windows 365 spoke network infrastructure in a designated resource group",
+  "Actions": [
+    "Microsoft.Resources/subscriptions/resourceGroups/read",
+    "Microsoft.Resources/subscriptions/resourceGroups/write",
+    "Microsoft.Resources/deployments/*",
+    "Microsoft.Network/virtualNetworks/*",
+    "Microsoft.Network/networkSecurityGroups/*",
+    "Microsoft.Network/virtualNetworks/subnets/*",
+    "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/*",
+    "Microsoft.Network/locations/operations/read",
+    "Microsoft.Network/locations/usages/read",
+    "Microsoft.Authorization/roleAssignments/read"
+  ],
+  "NotActions": [],
+  "DataActions": [],
+  "NotDataActions": [],
+  "AssignableScopes": [
+    "/subscriptions/{subscription-id}/resourceGroups/rg-w365-spoke-prod"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "southcentralus"
+    },
+    "env": {
+      "value": "prod"
+    },
+    "studentNumber": {
+      "value": 1
+    },
+    "tags": {
+      "value": {
+        "env": "prod",
+        "workload": "Windows365",
+        "owner": "platform-team",
+        "costCenter": "1000"
+      }
+    },
+    "enableAvdSubnet": {
+      "value": false
+    },
+    "hubVnetId": {
+      "value": ""
+    },
+    "allowForwardedTraffic": {
+      "value": true
+    },
+    "useRemoteGateways": {
+      "value": false
+    }
+  }
+}
