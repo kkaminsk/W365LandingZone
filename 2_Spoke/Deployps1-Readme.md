@@ -158,6 +158,16 @@ Deploy to a different region:
 .\deploy.ps1 -Location "eastus" -StudentNumber 1
 ```
 
+### Cross-Subscription Deployment (Hub & Spoke Separation)
+
+If your Hub network is in one subscription and you want to deploy the Spoke to a **different** subscription:
+```powershell
+# Deploy Spoke to a specific subscription ID
+.\deploy.ps1 -SubscriptionId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -StudentNumber 1
+```
+
+The script will handle the context switching. The optional peering to the Hub (via `hubVnetId` parameter) supports cross-subscription links natively.
+
 ### Multi-Tenant Administration
 
 If you have access to multiple Azure AD tenants, the script now guides you through choosing the correct tenant and subscription before validation or deployment.

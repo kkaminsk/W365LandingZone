@@ -17,9 +17,20 @@ cd W365
 # Validate template before deployment
 .\deploy.ps1 -Validate -StudentNumber 10
 
+# Deploy to a specific subscription (e.g. Hub and Spoke in different subscriptions)
+.\deploy.ps1 -SubscriptionId "<spoke-subscription-guid>" -StudentNumber 1
+
 # Deploy to a specific tenant and subscription (multi-tenant admins)
 .\deploy.ps1 -TenantId "<tenant-guid>" -SubscriptionId "<subscription-guid>" -StudentNumber 1
 ```
+
+## 🌐 Subscription Flexibility
+
+This solution supports deploying the **Spoke** network to:
+1.  **The same subscription** as the Hub (simplest for testing)
+2.  **A separate subscription** from the Hub (enterprise standard)
+
+The deployment script `deploy.ps1` automatically handles the context switching if you provide the `-SubscriptionId` parameter. The optional VNet peering to the Hub works across subscriptions as long as your account has permissions on both VNets.
 
 > **⚠️ Important**: Always specify `-StudentNumber` (1-40) to ensure unique IP addressing for each student. See [IP-ADDRESSING.md](./IP-ADDRESSING.md) for details.
 
