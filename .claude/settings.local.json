@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(tree /f /l C:tempW365LandingZone)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
