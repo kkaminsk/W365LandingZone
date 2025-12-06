@@ -24,6 +24,16 @@ Shows what will be created/modified without making changes
 ```
 Executes the actual deployment
 
+### Multi-Tenant Support
+For administrators with access to multiple Azure tenants:
+```powershell
+# Specify tenant explicitly
+.\deploy.ps1 -TenantId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Specify both tenant and subscription
+.\deploy.ps1 -TenantId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -SubscriptionId "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+```
+
 ## What Gets Deployed
 
 Your hub landing zone includes:
@@ -54,17 +64,18 @@ Your hub landing zone includes:
 
 ### Governance
 - Azure Policy (Allowed Locations)
-- Azure Budget ($200/month with alerts)
-- RBAC Assignments (if group IDs provided)
+- Azure Budget ($200/month with alerts) - always deployed
+- RBAC Assignments (if group IDs provided in parameters)
 
 ## Pre-Deployment Checklist
 
-- [_] Bicep code validated
-- [_] Connected to Azure (W365Lab subscription)
-- [_] Parameter file configured
-- [_] Review what-if output
-- [_] Ensure you have Owner/Contributor role
-- [_] Verify subscription quota for resources
+- [ ] Bicep code validated (`.\deploy.ps1 -Validate`)
+- [ ] Connected to Azure (`Connect-AzAccount`)
+- [ ] Correct tenant/subscription selected
+- [ ] Parameter file configured
+- [ ] Review what-if output (`.\deploy.ps1 -WhatIf`)
+- [ ] Ensure you have Owner/Contributor role
+- [ ] Verify subscription quota for resources
 
 ## Parameters You Can Customize
 
@@ -72,13 +83,37 @@ Edit `infra\envs\prod\parameters.prod.json`:
 
 ```json
 {
-  "location": "canada-central",           // Azure region
-  "env": "prod",                          // Environment tag
-  "allowedLocations": [...],              // Policy regions
-  "networkAdminsGroupObjectId": "",       // AAD group for network admins
-  "opsGroupObjectId": ""                  // AAD group for ops team
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "southcentralus" },
+    "env": { "value": "prod" },
+    "tags": {
+      "value": {
+        "env": "prod",
+        "owner": "platform-team",
+        "costCenter": "1000",
+        "dataSensitivity": "internal"
+      }
+    },
+    "allowedLocations": { "value": ["southcentralus", "canadaeast"] },
+    "networkAdminsGroupObjectId": { "value": "" },
+    "opsGroupObjectId": { "value": "" },
+    "enableFirewall": { "value": false }
+  }
 }
 ```
+
+### Parameter Descriptions
+| Parameter | Description |
+|-----------|-------------|
+| `location` | Azure region for deployment |
+| `env` | Environment tag (prod, dev, test) |
+| `tags` | Resource tags applied to all resources |
+| `allowedLocations` | Regions allowed by Azure Policy |
+| `networkAdminsGroupObjectId` | Entra ID group for network admin RBAC |
+| `opsGroupObjectId` | Entra ID group for operations RBAC |
+| `enableFirewall` | Deploy Azure Firewall (default: false) |
 
 ## Deployment Time
 

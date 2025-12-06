@@ -50,21 +50,62 @@ W365LandingZone/
 │   ├── deploy.ps1                  # Hub deployment script
 │   ├── verify.ps1                  # Post-deployment verification
 │   ├── QUICKSTART.md               # Quick start guide
+│   ├── README.md                   # Detailed hub documentation
+│   ├── Deployps1-Readme.md         # Deployment script documentation
+│   ├── ExecutionFlow.md            # Script execution flow details
+│   ├── ImplementationPlan.md       # Implementation planning docs
 │   ├── infra/                      # Bicep templates
 │   │   ├── modules/                # Reusable Bicep modules
+│   │   │   ├── budget/             # Azure budget module
+│   │   │   ├── diagnostics/        # Diagnostic settings modules
+│   │   │   ├── hub-network/        # Hub VNet and subnets
+│   │   │   ├── log-analytics/      # Log Analytics workspace
+│   │   │   ├── policy/             # Azure Policy assignments
+│   │   │   ├── private-dns/        # Private DNS zones
+│   │   │   ├── rbac/               # RBAC assignments
+│   │   │   └── rg/                 # Resource group module
 │   │   └── envs/prod/              # Production environment config
-│   └── scripts/                    # Helper scripts (RBAC, users)
+│   └── scripts/entra/              # Entra ID helper scripts
+│       ├── 1-Setup-RbacGroups.ps1  # RBAC group creation
+│       └── 2-Setup-LabUsers.ps1    # Lab user provisioning
 │
-└── 2_Spoke/                        # Windows 365 spoke solution
-    ├── deploy.ps1                  # Spoke deployment script
-    ├── QUICKSTART.md               # Quick start guide
-    ├── README.md                   # Detailed spoke documentation
-    ├── Setup-MinimumPermissions.ps1 # Security configuration script
-    ├── Set-W365Permissions.ps1     # Windows 365 permission setup
-    ├── infra/                      # Bicep templates
-    │   ├── modules/                # Reusable Bicep modules
-    │   └── envs/prod/              # Production environment config
-    └── [Documentation files]       # Architecture, IP addressing, etc.
+├── 2_Spoke/                        # Windows 365 spoke solution
+│   ├── deploy.ps1                  # Spoke deployment script
+│   ├── QUICKSTART.md               # Quick start guide
+│   ├── README.md                   # Detailed spoke documentation
+│   ├── Deployps1-Readme.md         # Deployment script documentation
+│   ├── ExecutionFlow.md            # Script execution flow details
+│   ├── Setup-MinimumPermissions.ps1 # Security configuration script
+│   ├── Set-W365Permissions.ps1     # Windows 365 permission setup
+│   ├── Check-W365Permissions.ps1   # Permission verification script
+│   ├── W365-MinimumRole.json       # Custom RBAC role definition
+│   ├── ARCHITECTURE-DIAGRAM.md     # Network topology diagrams
+│   ├── IP-ADDRESSING.md            # Multi-student IP allocation
+│   ├── HUB-VS-SPOKE.md             # Comparison and integration guide
+│   ├── PERMISSIONS-AND-RESTRICTIONS.md # Security configuration
+│   ├── DEPLOYMENT-SUMMARY.md       # Deployment overview
+│   ├── INDEX.md                    # Documentation index
+│   ├── infra/                      # Bicep templates
+│   │   ├── modules/                # Reusable Bicep modules
+│   │   │   ├── rg/                 # Resource group module
+│   │   │   ├── spoke-network/      # Spoke VNet and subnets
+│   │   │   └── w365-permissions/   # W365 permission assignments
+│   │   └── envs/prod/              # Production environment config
+│   └── Readme-W365Permissions.md   # W365 permissions documentation
+│
+├── Graphics/                       # Documentation diagrams
+│   ├── Hub.png                     # Hub architecture diagram
+│   ├── Overview.png                # Solution overview diagram
+│   └── SpokeIPAndSubnet.png        # Spoke IP addressing diagram
+│
+├── openspec/                       # Spec-driven development framework
+│   ├── changes/                    # Proposed changes
+│   └── specs/                      # Current specifications
+│
+├── CLAUDE.md                       # Claude Code project guide
+├── AGENTS.md                       # AI agent configuration
+├── LICENSE                         # License file
+└── README.md                       # This file
 ```
 
 ## Quick Start
@@ -162,7 +203,10 @@ Edit `1_Hub/infra/envs/prod/parameters.prod.json`:
 
 ### Documentation
 - **[QUICKSTART.md](1_Hub/QUICKSTART.md)** - Quick deployment guide
+- **[README.md](1_Hub/README.md)** - Comprehensive hub documentation
 - **[Deployps1-Readme.md](1_Hub/Deployps1-Readme.md)** - Detailed deployment documentation
+- **[ExecutionFlow.md](1_Hub/ExecutionFlow.md)** - Script execution flow details
+- **[verifyps1-readme.md](1_Hub/verifyps1-readme.md)** - Verification script documentation
 
 **Estimated Deployment Time:** 5-10 minutes
 
@@ -238,10 +282,15 @@ For enterprise deployments with minimum privilege requirements, use the provided
 ### Documentation
 - **[QUICKSTART.md](2_Spoke/QUICKSTART.md)** - Quick deployment guide
 - **[README.md](2_Spoke/README.md)** - Comprehensive spoke documentation
+- **[Deployps1-Readme.md](2_Spoke/Deployps1-Readme.md)** - Deployment script documentation
+- **[ExecutionFlow.md](2_Spoke/ExecutionFlow.md)** - Script execution flow details
 - **[IP-ADDRESSING.md](2_Spoke/IP-ADDRESSING.md)** - Multi-student IP allocation details
 - **[ARCHITECTURE-DIAGRAM.md](2_Spoke/ARCHITECTURE-DIAGRAM.md)** - Network topology diagrams
 - **[HUB-VS-SPOKE.md](2_Spoke/HUB-VS-SPOKE.md)** - Comparison and integration guide
 - **[PERMISSIONS-AND-RESTRICTIONS.md](2_Spoke/PERMISSIONS-AND-RESTRICTIONS.md)** - Security configuration
+- **[Readme-W365Permissions.md](2_Spoke/Readme-W365Permissions.md)** - Windows 365 permissions guide
+- **[DEPLOYMENT-SUMMARY.md](2_Spoke/DEPLOYMENT-SUMMARY.md)** - Deployment overview
+- **[INDEX.md](2_Spoke/INDEX.md)** - Documentation index
 
 **Estimated Deployment Time:** 3-5 minutes per spoke
 
