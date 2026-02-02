@@ -10,7 +10,9 @@
       "Bash(openspec list:*)",
       "Bash(openspec instructions design:*)",
       "Bash(openspec instructions specs:*)",
-      "Bash(openspec instructions tasks:*)"
+      "Bash(openspec instructions tasks:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -Command \".\\\\deploy.ps1 -Validate\")",
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"cd ''C:\\\\temp\\\\W365LandingZone\\\\1_Hub''; .\\\\deploy.ps1 -Validate\")"
     ],
     "deny": [],
     "ask": []

@@ -15,6 +15,10 @@
     "allowedLocations": { "value": ["southcentralus", "canadaeast"] },
     "networkAdminsGroupObjectId": { "value": "" },
     "opsGroupObjectId": { "value": "" },
-    "enableFirewall": { "value": false }
+    "enableFirewall": { "value": false },
+    "enableConnectivityHub": { "value": true },
+    "enableBastionSubnet": { "value": true },
+    "enableDnsSubnet": { "value": true },
+    "enableSharedServicesSubnet": { "value": true }
   }
 }

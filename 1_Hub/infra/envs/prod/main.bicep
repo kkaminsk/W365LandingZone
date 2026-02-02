@@ -31,8 +31,21 @@ param opsGroupObjectId string = ''
 @description('Enable Azure Firewall deployment (requires Network Contributor permissions)')
 param enableFirewall bool = false
 
+@description('Enable connectivity hub with expanded subnets')
+param enableConnectivityHub bool = false
+
+@description('Enable Azure Bastion subnet in connectivity hub')
+param enableBastionSubnet bool = false
+
+@description('Enable DNS resolver subnet in connectivity hub')
+param enableDnsSubnet bool = false
+
+@description('Enable shared services subnet in connectivity hub')
+param enableSharedServicesSubnet bool = false
+
 var rgNetName = 'rg-hub-net'
 var rgOpsName = 'rg-hub-ops'
+var rgConnectivityName = 'rg-hub-connectivity'
 
 module rg '../../modules/rg/main.bicep' = {
   name: 'rg'
@@ -41,6 +54,8 @@ module rg '../../modules/rg/main.bicep' = {
     location: location
     rgNetName: rgNetName
     rgOpsName: rgOpsName
+    rgConnectivityName: rgConnectivityName
+    enableConnectivityRg: enableConnectivityHub
     tags: tags
   }
 }
@@ -60,7 +75,7 @@ module law '../../modules/log-analytics/main.bicep' = {
 module net '../../modules/hub-network/main.bicep' = {
   name: 'hubNetwork'
   scope: resourceGroup(rgNetName)
-  dependsOn: [ rg ]
+  dependsOn: [ rg, law ]
   params: {
     location: location
     vnetName: 'vnet-hub'
@@ -70,6 +85,33 @@ module net '../../modules/hub-network/main.bicep' = {
     enableGatewaySubnet: false
     enableFirewall: enableFirewall
     firewallSubnetPrefix: '10.10.2.0/26'
+    lawId: law.outputs.lawId
+    tags: tags
+  }
+}
+
+// Connectivity hub network (larger address space with Bastion, DNS, shared services subnets)
+module connectivityNet '../../modules/hub-network/main.bicep' = if (enableConnectivityHub) {
+  name: 'connectivityNetwork'
+  scope: resourceGroup(rgConnectivityName)
+  dependsOn: [ rg, law ]
+  params: {
+    location: location
+    vnetName: 'hub-connectivity-prod'
+    vnetAddressSpace: '10.0.0.0/16'
+    mgmtSubnetPrefix: '10.0.0.0/24'
+    privEndpointsSubnetPrefix: '10.0.6.0/24'
+    enableGatewaySubnet: true
+    gatewaySubnetPrefix: '10.0.3.0/27'
+    enableFirewall: enableFirewall
+    firewallSubnetPrefix: '10.0.1.0/26'
+    enableBastionSubnet: enableBastionSubnet
+    bastionSubnetPrefix: '10.0.2.0/26'
+    enableDnsSubnet: enableDnsSubnet
+    dnsSubnetPrefix: '10.0.4.0/28'
+    enableSharedServicesSubnet: enableSharedServicesSubnet
+    sharedServicesSubnetPrefix: '10.0.5.0/24'
+    lawId: law.outputs.lawId
     tags: tags
   }
 }
