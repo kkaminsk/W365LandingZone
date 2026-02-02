@@ -3,7 +3,14 @@
     "allow": [
       "Bash(dir:*)",
       "Bash(tree /f /l C:tempW365LandingZone)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(openspec new change:*)",
+      "Bash(openspec status:*)",
+      "Bash(openspec instructions proposal:*)",
+      "Bash(openspec list:*)",
+      "Bash(openspec instructions design:*)",
+      "Bash(openspec instructions specs:*)",
+      "Bash(openspec instructions tasks:*)"
     ],
     "deny": [],
     "ask": []
