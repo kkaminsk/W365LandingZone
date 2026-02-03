@@ -10,24 +10,31 @@
     .\deploy.ps1 -WhatIf
     .\deploy.ps1 -TenantId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     .\deploy.ps1 -TenantId "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" -SubscriptionId "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+    .\deploy.ps1 -UseDeviceCode
+.NOTES
+    Use -UseDeviceCode if you encounter browser authentication issues (redirect URI mismatch errors).
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$false)]
     [switch]$WhatIf,
-    
+
     [Parameter(Mandatory=$false)]
     [switch]$Validate,
-    
+
     [Parameter(Mandatory=$false)]
     [string]$Location = "westus3",
-    
+
     [Parameter(Mandatory=$false)]
     [string]$TenantId,
-    
+
     [Parameter(Mandatory=$false)]
-    [string]$SubscriptionId
+    [string]$SubscriptionId,
+
+    [Parameter(Mandatory=$false)]
+    [Alias("DeviceCode")]
+    [switch]$UseDeviceCode
 )
 
 # Configuration
@@ -62,7 +69,8 @@ function Test-AzModuleInstalled {
 function Select-AzureTenantContext {
     param(
         [string]$TenantId,
-        [string]$SubscriptionId
+        [string]$SubscriptionId,
+        [switch]$UseDeviceCode
     )
     
     Write-Host "`nChecking Azure login status..." -ForegroundColor Cyan
@@ -72,7 +80,12 @@ function Select-AzureTenantContext {
         $context = Get-AzContext
         if (!$context) {
             Write-Host "Not logged in to Azure. Initiating login..." -ForegroundColor Yellow
-            Connect-AzAccount -Force
+            if ($UseDeviceCode) {
+                Write-Host "Using device code authentication..." -ForegroundColor Cyan
+                Connect-AzAccount -UseDeviceAuthentication -Force
+            } else {
+                Connect-AzAccount -Force
+            }
             $context = Get-AzContext
         }
         
@@ -98,16 +111,24 @@ function Select-AzureTenantContext {
                 return $false
             }
             Write-Host "Using specified tenant: $($selectedTenant.Name) ($($selectedTenant.Id))" -ForegroundColor Green
-            
+
             # Re-authenticate to ensure proper access
             Write-Host "`nAuthenticating to tenant..." -ForegroundColor Cyan
             try {
-                Connect-AzAccount -TenantId $selectedTenant.Id -Force -ErrorAction Stop | Out-Null
+                if ($UseDeviceCode) {
+                    Write-Host "Using device code authentication..." -ForegroundColor Cyan
+                    Connect-AzAccount -TenantId $selectedTenant.Id -UseDeviceAuthentication -Force -ErrorAction Stop | Out-Null
+                } else {
+                    Connect-AzAccount -TenantId $selectedTenant.Id -Force -ErrorAction Stop | Out-Null
+                }
                 Write-Host "Successfully authenticated to tenant." -ForegroundColor Green
             }
             catch {
                 Write-Host "Failed to authenticate to tenant: $_" -ForegroundColor Red
                 Write-Host "Please ensure you have access to this tenant and complete any required MFA." -ForegroundColor Yellow
+                if (!$UseDeviceCode) {
+                    Write-Host "Tip: Try running with -UseDeviceCode to use device authentication instead." -ForegroundColor Yellow
+                }
                 return $false
             }
         }
@@ -115,16 +136,24 @@ function Select-AzureTenantContext {
             # Only one tenant available, use it automatically
             $selectedTenant = $tenants[0]
             Write-Host "Using tenant: $($selectedTenant.Name) ($($selectedTenant.Id))" -ForegroundColor Green
-            
+
             # Re-authenticate to ensure proper access
             Write-Host "`nAuthenticating to tenant..." -ForegroundColor Cyan
             try {
-                Connect-AzAccount -TenantId $selectedTenant.Id -Force -ErrorAction Stop | Out-Null
+                if ($UseDeviceCode) {
+                    Write-Host "Using device code authentication..." -ForegroundColor Cyan
+                    Connect-AzAccount -TenantId $selectedTenant.Id -UseDeviceAuthentication -Force -ErrorAction Stop | Out-Null
+                } else {
+                    Connect-AzAccount -TenantId $selectedTenant.Id -Force -ErrorAction Stop | Out-Null
+                }
                 Write-Host "Successfully authenticated to tenant." -ForegroundColor Green
             }
             catch {
                 Write-Host "Failed to authenticate to tenant: $_" -ForegroundColor Red
                 Write-Host "Please ensure you have access to this tenant and complete any required MFA." -ForegroundColor Yellow
+                if (!$UseDeviceCode) {
+                    Write-Host "Tip: Try running with -UseDeviceCode to use device authentication instead." -ForegroundColor Yellow
+                }
                 return $false
             }
         }
@@ -143,20 +172,28 @@ function Select-AzureTenantContext {
             
             $selectedTenant = $tenants[$selectionIndex]
             Write-Host "Selected tenant: $($selectedTenant.Name) ($($selectedTenant.Id))" -ForegroundColor Green
+
+            # Re-authenticate to the selected tenant to ensure proper access (MFA, etc.)
+            Write-Host "`nAuthenticating to tenant..." -ForegroundColor Cyan
+            try {
+                if ($UseDeviceCode) {
+                    Write-Host "Using device code authentication..." -ForegroundColor Cyan
+                    Connect-AzAccount -TenantId $selectedTenant.Id -UseDeviceAuthentication -Force -ErrorAction Stop | Out-Null
+                } else {
+                    Connect-AzAccount -TenantId $selectedTenant.Id -Force -ErrorAction Stop | Out-Null
+                }
+                Write-Host "Successfully authenticated to tenant." -ForegroundColor Green
+            }
+            catch {
+                Write-Host "Failed to authenticate to tenant: $_" -ForegroundColor Red
+                Write-Host "Please ensure you have access to this tenant and complete any required MFA." -ForegroundColor Yellow
+                if (!$UseDeviceCode) {
+                    Write-Host "Tip: Try running with -UseDeviceCode to use device authentication instead." -ForegroundColor Yellow
+                }
+                return $false
+            }
         }
-        
-        # Re-authenticate to the selected tenant to ensure proper access (MFA, etc.)
-        Write-Host "`nAuthenticating to tenant..." -ForegroundColor Cyan
-        try {
-            Connect-AzAccount -TenantId $selectedTenant.Id -Force -ErrorAction Stop | Out-Null
-            Write-Host "Successfully authenticated to tenant." -ForegroundColor Green
-        }
-        catch {
-            Write-Host "Failed to authenticate to tenant: $_" -ForegroundColor Red
-            Write-Host "Please ensure you have access to this tenant and complete any required MFA." -ForegroundColor Yellow
-            return $false
-        }
-        
+
         # Get subscriptions in selected tenant
         Write-Host "`nRetrieving subscriptions in tenant..." -ForegroundColor Cyan
         
@@ -282,13 +319,18 @@ try {
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "  Hub Landing Zone Deployment Script" -ForegroundColor Cyan
     Write-Host "========================================" -ForegroundColor Cyan
-    
+
+    if ($UseDeviceCode) {
+        Write-Host "`nDevice Code Authentication: ENABLED" -ForegroundColor Yellow
+        Write-Host "You will be prompted to authenticate via https://microsoft.com/devicelogin" -ForegroundColor Yellow
+    }
+
     # Check prerequisites
     if (!(Test-AzModuleInstalled)) {
         exit 1
     }
     
-    if (!(Select-AzureTenantContext -TenantId $TenantId -SubscriptionId $SubscriptionId)) {
+    if (!(Select-AzureTenantContext -TenantId $TenantId -SubscriptionId $SubscriptionId -UseDeviceCode:$UseDeviceCode)) {
         exit 1
     }
     
